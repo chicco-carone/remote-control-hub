@@ -1,0 +1,53 @@
+{
+  "deviceType": "Air Conditioner",
+  "defaultButtons": [
+    {
+      "name": "Power",
+      "description": "Turn AC on/off",
+      "icon": "power",
+      "category": "basic"
+    },
+    {
+      "name": "Temperature Up",
+      "description": "Increase temperature",
+      "icon": "thermometer",
+      "category": "temperature"
+    },
+    {
+      "name": "Temperature Down",
+      "description": "Decrease temperature",
+      "icon": "thermometer",
+      "category": "temperature"
+    },
+    {
+      "name": "Mode",
+      "description": "Change mode (Cool/Heat/Fan/Auto)",
+      "icon": "settings",
+      "category": "basic"
+    },
+    {
+      "name": "Fan Speed",
+      "description": "Change fan speed",
+      "icon": "fan",
+      "category": "basic"
+    },
+    {
+      "name": "Timer",
+      "description": "Set timer",
+      "icon": "clock",
+      "category": "basic"
+    },
+    {
+      "name": "Swing",
+      "description": "Toggle swing mode",
+      "icon": "move",
+      "category": "basic"
+    },
+    {
+      "name": "Sleep",
+      "description": "Sleep mode",
+      "icon": "moon",
+      "category": "basic"
+    }
+  ]
+}

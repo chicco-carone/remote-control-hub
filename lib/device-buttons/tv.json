@@ -1,0 +1,95 @@
+{
+  "deviceType": "TV",
+  "defaultButtons": [
+    {
+      "name": "Power",
+      "description": "Turn TV on/off",
+      "icon": "power",
+      "category": "basic"
+    },
+    {
+      "name": "Volume Up",
+      "description": "Increase volume",
+      "icon": "volume-2",
+      "category": "audio"
+    },
+    {
+      "name": "Volume Down",
+      "description": "Decrease volume",
+      "icon": "volume-1",
+      "category": "audio"
+    },
+    {
+      "name": "Mute",
+      "description": "Mute/unmute audio",
+      "icon": "volume-x",
+      "category": "audio"
+    },
+    {
+      "name": "Channel Up",
+      "description": "Next channel",
+      "icon": "chevron-up",
+      "category": "navigation"
+    },
+    {
+      "name": "Channel Down",
+      "description": "Previous channel",
+      "icon": "chevron-down",
+      "category": "navigation"
+    },
+    {
+      "name": "Menu",
+      "description": "Open main menu",
+      "icon": "menu",
+      "category": "navigation"
+    },
+    {
+      "name": "Home",
+      "description": "Go to home screen",
+      "icon": "home",
+      "category": "navigation"
+    },
+    {
+      "name": "Back",
+      "description": "Go back",
+      "icon": "arrow-left",
+      "category": "navigation"
+    },
+    {
+      "name": "OK/Enter",
+      "description": "Confirm selection",
+      "icon": "check",
+      "category": "navigation"
+    },
+    {
+      "name": "Up",
+      "description": "Navigate up",
+      "icon": "arrow-up",
+      "category": "directional"
+    },
+    {
+      "name": "Down",
+      "description": "Navigate down",
+      "icon": "arrow-down",
+      "category": "directional"
+    },
+    {
+      "name": "Left",
+      "description": "Navigate left",
+      "icon": "arrow-left",
+      "category": "directional"
+    },
+    {
+      "name": "Right",
+      "description": "Navigate right",
+      "icon": "arrow-right",
+      "category": "directional"
+    },
+    {
+      "name": "Input/Source",
+      "description": "Change input source",
+      "icon": "monitor",
+      "category": "basic"
+    }
+  ]
+}

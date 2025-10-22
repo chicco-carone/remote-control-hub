@@ -1,0 +1,53 @@
+{
+  "deviceType": "Default",
+  "defaultButtons": [
+    {
+      "name": "Power",
+      "description": "Turn device on/off",
+      "icon": "power",
+      "category": "basic"
+    },
+    {
+      "name": "Menu",
+      "description": "Open menu",
+      "icon": "menu",
+      "category": "navigation"
+    },
+    {
+      "name": "OK/Enter",
+      "description": "Confirm selection",
+      "icon": "check",
+      "category": "navigation"
+    },
+    {
+      "name": "Back",
+      "description": "Go back",
+      "icon": "arrow-left",
+      "category": "navigation"
+    },
+    {
+      "name": "Up",
+      "description": "Navigate up",
+      "icon": "arrow-up",
+      "category": "directional"
+    },
+    {
+      "name": "Down",
+      "description": "Navigate down",
+      "icon": "arrow-down",
+      "category": "directional"
+    },
+    {
+      "name": "Left",
+      "description": "Navigate left",
+      "icon": "arrow-left",
+      "category": "directional"
+    },
+    {
+      "name": "Right",
+      "description": "Navigate right",
+      "icon": "arrow-right",
+      "category": "directional"
+    }
+  ]
+}

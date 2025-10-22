@@ -1,0 +1,59 @@
+{
+  "deviceType": "Sound System",
+  "defaultButtons": [
+    {
+      "name": "Power",
+      "description": "Turn system on/off",
+      "icon": "power",
+      "category": "basic"
+    },
+    {
+      "name": "Volume Up",
+      "description": "Increase volume",
+      "icon": "volume-2",
+      "category": "audio"
+    },
+    {
+      "name": "Volume Down",
+      "description": "Decrease volume",
+      "icon": "volume-1",
+      "category": "audio"
+    },
+    {
+      "name": "Mute",
+      "description": "Mute/unmute audio",
+      "icon": "volume-x",
+      "category": "audio"
+    },
+    {
+      "name": "Input/Source",
+      "description": "Change input source",
+      "icon": "radio",
+      "category": "basic"
+    },
+    {
+      "name": "Bass Up",
+      "description": "Increase bass",
+      "icon": "plus",
+      "category": "audio"
+    },
+    {
+      "name": "Bass Down",
+      "description": "Decrease bass",
+      "icon": "minus",
+      "category": "audio"
+    },
+    {
+      "name": "Treble Up",
+      "description": "Increase treble",
+      "icon": "plus",
+      "category": "audio"
+    },
+    {
+      "name": "Treble Down",
+      "description": "Decrease treble",
+      "icon": "minus",
+      "category": "audio"
+    }
+  ]
+}
