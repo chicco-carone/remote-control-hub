@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    reactCompiler: true,
+    turbopackFileSystemCacheForDev: true,
   },
+  reactCompiler: true,
 };
 
 export default nextConfig;
