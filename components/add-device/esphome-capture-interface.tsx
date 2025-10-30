@@ -64,13 +64,31 @@ export function ESPHomeCaptureInterface({
   );
 
   useEffect(() => {
-    // Initialize captured codes array
-    const initialCodes = allButtons.map((button) => ({
-      button,
-      code: null as CapturedCode | null,
-      captured: false,
-    }));
-    setCapturedCodes(initialCodes);
+    // Initialize or update captured codes array, preserving existing captured codes
+    setCapturedCodes((prevCodes) => {
+      // Create a map of existing codes by button name for quick lookup
+      const existingCodesMap = new Map(
+        prevCodes.map((item) => [item.button.name, item])
+      );
+
+      // Build new array, preserving existing captured codes and adding new buttons
+      const updatedCodes = allButtons.map((button) => {
+        const existingCode = existingCodesMap.get(button.name);
+        if (existingCode) {
+          // Preserve existing captured code and state
+          return existingCode;
+        } else {
+          // Add new button with default state
+          return {
+            button,
+            code: null as CapturedCode | null,
+            captured: false,
+          };
+        }
+      });
+
+      return updatedCodes;
+    });
   }, [allButtons]);
 
   useEffect(() => {
@@ -140,6 +158,15 @@ export function ESPHomeCaptureInterface({
       setCustomButtons((prev) => [...prev, newButton]);
       setNewButtonName("");
       setIsAddingCustom(false);
+
+      // Update current button index to account for the new button
+      setCurrentButtonIndex((prevIndex) => {
+        // If we were at the last button, move to the new last button
+        if (prevIndex === allButtons.length - 1) {
+          return allButtons.length; // This will be the new length after adding
+        }
+        return prevIndex;
+      });
     }
   };
 
@@ -157,19 +184,23 @@ export function ESPHomeCaptureInterface({
       parameters: Record<string, string | number | boolean>;
     }[],
   ) => {
-    // Convert back to CapturedButtonCode format
-    const updatedCapturedCodes = capturedCodes
-      .map((item, index) => {
-        const updatedCode = updatedCodes.find(
-          (code, codeIndex) => codeIndex === index,
-        );
+    // Convert back to CapturedButtonCode format, preserving existing state
+    setCapturedCodes((prevCodes) => {
+      // Create a map of updated codes by name for quick lookup
+      const updatedCodesMap = new Map(
+        updatedCodes.map((code) => [code.name, code])
+      );
+
+      // Update existing codes while preserving their captured state
+      const updatedCapturedCodes = prevCodes.map((item) => {
+        const updatedCode = updatedCodesMap.get(item.button.name);
         if (updatedCode) {
           return {
             ...item,
-            code: {
-              ...item.code!,
+            code: item.code ? {
+              ...item.code,
               parameters: updatedCode.parameters,
-            },
+            } : null,
             button: {
               ...item.button,
               name: updatedCode.name,
@@ -177,10 +208,10 @@ export function ESPHomeCaptureInterface({
           };
         }
         return item;
-      })
-      .filter((_, index) => index < updatedCodes.length);
+      });
 
-    setCapturedCodes(updatedCapturedCodes);
+      return updatedCapturedCodes;
+    });
   };
 
   const handleProceedWithCodes = () => {
