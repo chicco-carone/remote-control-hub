@@ -407,7 +407,8 @@ export default function AddDevicePage() {
       parameters: item.code!.parameters,
     }));
     setCodes(formattedCodes);
-    setCurrentStep(3);
+    // Auto-submit when ESPHome codes are ready
+    handleSubmit();
   };
 
   if (submitSuccess) {
