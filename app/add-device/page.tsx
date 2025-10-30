@@ -26,10 +26,9 @@ import { ZodError } from "zod";
 import type { ESPHomeConnection, ESPHomeDevice } from "@/types/esphome";
 import { CapturedButtonCode } from "@/types/esphome";
 import { ESPHomeCode, FormData, FormErrors } from "@/types/form";
-import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { AlertCircle, Edit, Radio } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function AddDevicePage() {
   const { isAuthenticated } = useCurrentUser();
@@ -39,37 +38,8 @@ export default function AddDevicePage() {
   const [newDeviceId, setNewDeviceId] = useState<Id<"devices"> | null>(null);
 
   const createDevice = useMutation(api.mutations.devices.createDevice);
-  const upsertUser = useMutation(api.mutations.users.upsertUser);
-  const convexUser = useQuery(api.queries.viewer, { lastUpsert: undefined });
-  const { user: clerkUser } = useUser();
 
-  // Upsert user when authenticated and user data is available
-  useEffect(() => {
-    if (
-      clerkUser &&
-      convexUser &&
-      "_isTemporary" in convexUser &&
-      convexUser._isTemporary
-    ) {
-      upsertUser({
-        clerkId: clerkUser.id,
-        name:
-          clerkUser.firstName && clerkUser.lastName
-            ? `${clerkUser.firstName} ${clerkUser.lastName}`
-            : clerkUser.firstName || undefined,
-        email: clerkUser.primaryEmailAddress?.emailAddress || "",
-        username:
-          clerkUser.username ||
-          clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0] ||
-          "user",
-        image: clerkUser.imageUrl || "",
-        emailVerificationTime:
-          clerkUser.primaryEmailAddress?.verification?.status === "verified"
-            ? Date.now()
-            : undefined,
-      });
-    }
-  }, [clerkUser, convexUser, upsertUser]);
+  // Webhook-based sync is enabled: no client-side upsert
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
