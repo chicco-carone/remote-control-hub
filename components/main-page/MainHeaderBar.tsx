@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { SignInButton, UserButton } from "@clerk/nextjs";
-import { Plus } from "lucide-react";
+import { LogIn, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -27,7 +27,7 @@ export default function MainHeaderBar() {
             </p>
           </div>
           <div className="flex items-center gap-3 justify-end md:justify-start">
-            {isAuthenticated ? <UserButton /> : <SignInButton />}
+            {isAuthenticated ? <UserButton /> : <div className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-input bg-background text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SignInButton><LogIn className="h-4 w-4" /></SignInButton></div>}
             <ThemeToggle />
             <Button
               onClick={() => router.push("/add-device")}

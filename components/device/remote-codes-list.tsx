@@ -1,5 +1,16 @@
 // components/device/remote-codes-list.tsx
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -18,10 +29,12 @@ import { useMutation } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import { Check, Copy, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
+import { Trash } from "lucide-react";
 
 interface RemoteCodesListProps {
   codes: ConvexRemoteCode[];
   deviceId: Id<"devices">;
+  canManage?: boolean;
   copiedCode: string | null;
   onCopy: (code: string, codeName: string) => void;
 }
@@ -29,6 +42,7 @@ interface RemoteCodesListProps {
 export function RemoteCodesList({
   codes,
   deviceId,
+  canManage,
   copiedCode,
   onCopy,
 }: RemoteCodesListProps) {
@@ -36,6 +50,22 @@ export function RemoteCodesList({
   const [isBatchVoting, setIsBatchVoting] = useState(false);
 
   const voteOnAllCodes = useMutation(api.mutations.votes.voteOnAllCodes);
+  const deleteCode = useMutation(api.mutations.codes.deleteCode);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [codeToDelete, setCodeToDelete] = useState<Id<"codes"> | null>(null);
+
+  const handleConfirmDelete = async () => {
+    if (!codeToDelete) return;
+    setDeletingId(codeToDelete as unknown as string);
+    try {
+      await deleteCode({ codeId: codeToDelete });
+    } catch (e) {
+      console.error("Failed to delete code", e);
+    } finally {
+      setDeletingId(null);
+      setCodeToDelete(null);
+    }
+  };
 
   const handleBatchVote = async (type: "up" | "down") => {
     if (isBatchVoting || !isAuthenticated) return;
@@ -115,7 +145,11 @@ export function RemoteCodesList({
                         {code.name}
                       </h3>
                       {code.uploadedBy !== undefined && (
-                        <UserDisplay userName={code.uploadedBy} size="sm" />
+                        <UserDisplay
+                          userName={code.uploadedBy}
+                          userImage={code.uploadedByImage}
+                          size="sm"
+                        />
                       )}
                     </div>
                     <div className="flex items-center gap-2 mb-2">
@@ -134,6 +168,43 @@ export function RemoteCodesList({
                           <Copy className="h-4 w-4" />
                         )}
                       </Button>
+                      {canManage && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={() => setCodeToDelete(code.id)}
+                              disabled={deletingId === (code.id as unknown as string)}
+                              aria-label="Delete code"
+                            >
+                              {deletingId === (code.id as unknown as string) ? (
+                                <span className="text-xs">Deleting...</span>
+                              ) : (
+                                <Trash className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this code? It will be kept in the trash for 15 days.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleConfirmDelete}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Added{" "}
