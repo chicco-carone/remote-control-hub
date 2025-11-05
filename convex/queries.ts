@@ -87,12 +87,27 @@ export const getDeviceById = query({
 
     const author = await ctx.db.get(device.authorId);
 
+    // Compute canManage: current user is device author or admin
+    let canManage = false;
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity) {
+      const clerkId = identity.subject;
+      const currentUser = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
+        .first();
+      if (currentUser) {
+        const isAdmin = (currentUser.role as string | undefined) === "admin";
+        const isOwner = device.authorId === currentUser._id;
+        canManage = isOwner || isAdmin;
+      }
+    }
+
     const formattedCodes = await Promise.all(
       codes.map(async (code) => {
         const codeAuthor = await ctx.db.get(code.authorId);
 
         let userVote = null;
-        const identity = await ctx.auth.getUserIdentity();
         if (identity) {
           const clerkId = identity.subject;
           const currentUser = await ctx.db
@@ -136,6 +151,7 @@ export const getDeviceById = query({
       uploadedByImage: author?.image || "",
       uploadedAt: device.uploadedAt,
       totalVotes: device.totalVotes,
+      canManage,
     };
   },
 });

@@ -102,6 +102,7 @@ export default function DevicePage() {
             <RemoteCodesList
               codes={localDevice.codes}
               deviceId={localDevice.id}
+              canManage={Boolean((localDevice as any).canManage)}
               copiedCode={copiedCode}
               onCopy={copyToClipboard}
             />

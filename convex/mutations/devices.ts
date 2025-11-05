@@ -75,6 +75,12 @@ export const createDevice = mutation({
   },
 });
 
+function addDays(date: Date, days: number) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 export const deleteDevice = mutation({
   args: {
     deviceId: v.id("devices"),
@@ -99,30 +105,49 @@ export const deleteDevice = mutation({
       throw new Error("Device not found");
     }
 
-    if (device.authorId !== user._id) {
-      throw new Error("Only the author can delete this device");
+    const isAdmin = (user.role as string | undefined) === "admin";
+    const isOwner = device.authorId === user._id;
+    if (!isOwner && !isAdmin) {
+      throw new Error("Only the author or an admin can delete this device");
     }
 
+    // Gather codes and votes (both device-level and code-level) for snapshot
     const codes = await ctx.db
       .query("codes")
       .withIndex("by_device", (q) => q.eq("deviceId", args.deviceId))
       .collect();
 
+    // All votes belonging to this device (including device-level votes where codeId is undefined)
+    const allDeviceVotes = await ctx.db
+      .query("votes")
+      .withIndex("by_device", (q) => q.eq("deviceId", args.deviceId))
+      .collect();
+
+    const now = new Date();
+    const purgeAt = addDays(now, 15).toISOString();
+
+    // Insert snapshot into deleted_devices
+    await ctx.db.insert("deleted_devices", {
+      deviceId: device._id,
+      device,
+      codes,
+      votes: allDeviceVotes,
+      deletedBy: user._id,
+      deletedAt: now.toISOString(),
+      purgeAt,
+    });
+
+    // Hard delete votes, then codes, then device
+    for (const vote of allDeviceVotes) {
+      await ctx.db.delete(vote._id);
+    }
+
     for (const code of codes) {
-      const votes = await ctx.db
-        .query("votes")
-        .withIndex("by_code", (q) => q.eq("codeId", code._id))
-        .collect();
-
-      for (const vote of votes) {
-        await ctx.db.delete(vote._id);
-      }
-
       await ctx.db.delete(code._id);
     }
 
     await ctx.db.delete(args.deviceId);
 
-    return { message: "Device deleted successfully!" };
+    return { message: "Device deleted (soft) successfully!" };
   },
 });

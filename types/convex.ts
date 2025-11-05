@@ -30,6 +30,7 @@ export interface ConvexDevice {
     thumbsUp: number;
     thumbsDown: number;
   };
+  canManage?: boolean; // true if current user is device author or admin
 }
 
 export interface ConvexUser {

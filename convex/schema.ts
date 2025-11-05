@@ -70,4 +70,25 @@ export default defineSchema({
     .index("by_device", ["deviceId"])
     .index("by_user_code", ["userId", "codeId"])
     .index("by_user_device", ["userId", "deviceId"]),
+
+  // Soft-deleted snapshots (retention ~15 days)
+  deleted_devices: defineTable({
+    deviceId: v.id("devices"), // original id for traceability
+    device: v.any(), // full snapshot of device document
+    codes: v.array(v.any()), // full snapshot of all codes of device
+    votes: v.array(v.any()), // full snapshot of all votes (device-level and code-level)
+    deletedBy: v.id("users"),
+    deletedAt: v.string(), // ISO date
+    purgeAt: v.string(), // ISO date when this snapshot can be permanently removed
+  }).index("by_purge_at", ["purgeAt"]),
+
+  deleted_codes: defineTable({
+    codeId: v.id("codes"), // original code id
+    deviceId: v.id("devices"), // parent device reference
+    code: v.any(), // full snapshot of code document
+    votes: v.array(v.any()), // full snapshot of votes for this code
+    deletedBy: v.id("users"),
+    deletedAt: v.string(),
+    purgeAt: v.string(),
+  }).index("by_purge_at", ["purgeAt"]),
 });
