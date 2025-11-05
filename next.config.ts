@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: true,
   },
   reactCompiler: true,
+  allowedDevOrigins: ["gyrostatic-unfactiously-amparo.ngrok-free.dev"],
 };
 
 export default nextConfig;
