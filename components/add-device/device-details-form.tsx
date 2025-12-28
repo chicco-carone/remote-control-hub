@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useIsMobile } from "@/components/ui/use-mobile";
 import {
   deviceTypes,
   esphomeProtocols,
@@ -54,6 +55,7 @@ export function DeviceDetailsForm({
   handleInputChange,
 }: DeviceDetailsFormProps) {
   const { isAuthenticated } = useCurrentUser();
+  const isMobile = useIsMobile();
 
   return (
     <TooltipProvider>
@@ -122,7 +124,7 @@ export function DeviceDetailsForm({
                         >
                           <SelectValue placeholder="Select device type" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position={isMobile ? "item-aligned" : "popper"}>
                           {deviceTypes.map((type) => (
                             <SelectItem key={type} value={type}>
                               {type}
@@ -147,7 +149,7 @@ export function DeviceDetailsForm({
                     >
                       <SelectValue placeholder="Select device type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position={isMobile ? "item-aligned" : "popper"}>
                       {deviceTypes.map((type) => (
                         <SelectItem key={type} value={type}>
                           {type}
@@ -185,7 +187,7 @@ export function DeviceDetailsForm({
                           >
                             <SelectValue placeholder="Select or type brand" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent position={isMobile ? "item-aligned" : "popper"}>
                             {popularBrands.map((brand) => (
                               <SelectItem key={brand} value={brand}>
                                 {brand}
@@ -228,7 +230,7 @@ export function DeviceDetailsForm({
                       >
                         <SelectValue placeholder="Select or type brand" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position={isMobile ? "item-aligned" : "popper"}>
                         {popularBrands.map((brand) => (
                           <SelectItem key={brand} value={brand}>
                             {brand}
@@ -349,23 +351,23 @@ export function DeviceDetailsForm({
                       >
                         <SelectValue placeholder="Select ESPHome protocol" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {esphomeProtocols.map((protocol) => (
-                          <SelectItem
-                            key={protocol.value}
-                            value={protocol.value}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {protocol.label}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {protocol.description}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                  <SelectContent className={`max-h-60 ${isMobile ? 'fixed' : ''}`} position={isMobile ? "popper" : "popper"} side={isMobile ? "top" : "bottom"}>
+                    {esphomeProtocols.map((protocol) => (
+                      <SelectItem
+                        key={protocol.value}
+                        value={protocol.value}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {protocol.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {protocol.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                     </Select>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -384,7 +386,7 @@ export function DeviceDetailsForm({
                   >
                     <SelectValue placeholder="Select ESPHome protocol" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-60">
+                  <SelectContent className={`max-h-60 ${isMobile ? 'fixed' : ''}`} position={isMobile ? "popper" : "popper"} side={isMobile ? "top" : "bottom"}>
                     {esphomeProtocols.map((protocol) => (
                       <SelectItem key={protocol.value} value={protocol.value}>
                         <div className="flex flex-col">

@@ -19,10 +19,11 @@ import {
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { validateParameter, validateCode } from "@/hooks/use-code-validation";
 import { esphomeAPI } from "@/lib/esphome-api";
 import { protocolParameters } from "@/lib/esphome-constants";
 import { transmitActionSchema } from "@/lib/esphome-validation";
-import { ZodError } from "zod";
+import { z } from "zod";
 import type { ESPHomeConnection, ESPHomeDevice } from "@/types/esphome";
 import { CapturedButtonCode } from "@/types/esphome";
 import { ESPHomeCode, FormData, FormErrors } from "@/types/form";
@@ -97,6 +98,7 @@ export default function AddDevicePage() {
     paramName: string,
     value: string | number | boolean,
   ) => {
+    // Update the parameter value
     setCodes((prev) =>
       prev.map((code, i) =>
         i === codeIndex
@@ -104,6 +106,54 @@ export default function AddDevicePage() {
           : code,
       ),
     );
+
+    // Validate the parameter in real-time
+    const code = codes[codeIndex];
+    if (code && code.protocol) {
+      const updatedParameters = { ...code.parameters, [paramName]: value };
+      const error = validateParameter(
+        code.protocol,
+        paramName,
+        value,
+        updatedParameters
+      );
+
+      // Update errors state
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        
+        if (!newErrors.codes) {
+          newErrors.codes = {};
+        }
+        
+        if (!newErrors.codes[codeIndex]) {
+          newErrors.codes[codeIndex] = {};
+        }
+        
+        if (!newErrors.codes[codeIndex].parameters) {
+          newErrors.codes[codeIndex].parameters = {};
+        }
+        
+        if (error) {
+          newErrors.codes[codeIndex].parameters![paramName] = error;
+        } else {
+          delete newErrors.codes[codeIndex].parameters![paramName];
+          
+          // Clean up empty objects
+          if (Object.keys(newErrors.codes[codeIndex].parameters!).length === 0) {
+            delete newErrors.codes[codeIndex].parameters;
+          }
+          if (Object.keys(newErrors.codes[codeIndex]).length === 0) {
+            delete newErrors.codes[codeIndex];
+          }
+          if (Object.keys(newErrors.codes).length === 0) {
+            delete newErrors.codes;
+          }
+        }
+        
+        return newErrors;
+      });
+    }
   };
 
   const addCodeField = () => {
@@ -158,85 +208,14 @@ export default function AddDevicePage() {
     let hasErrors = false;
 
     validCodes.forEach((code, index) => {
-      const codeErrors: { name?: string; parameters?: { [key: string]: string } } = {};
-
-      // Validate name
-      if (!code.name.trim()) {
-        codeErrors.name = "Function name is required";
+      const validationResult = validateCode(code);
+      
+      if (!validationResult.isValid) {
         hasErrors = true;
-      }
-
-      // Validate parameters using Zod
-      try {
-        const paramsToValidate: Record<string, unknown> = {};
-
-        // Convert string parameters to appropriate types for Zod validation
-        Object.entries(code.parameters).forEach(([key, value]) => {
-          if (typeof value === 'string') {
-            // Try to parse as number
-            const numValue = Number(value);
-            if (!isNaN(numValue) && value.trim() !== '') {
-              paramsToValidate[key] = numValue;
-            } else if (value === 'true') {
-              paramsToValidate[key] = true;
-            } else if (value === 'false') {
-              paramsToValidate[key] = false;
-            } else if (value.startsWith('[') && value.endsWith(']')) {
-              // Handle array format like [0xA1, 0x82, 0x40]
-              try {
-                const arrayStr = value.slice(1, -1);
-                const arrayValues = arrayStr.split(',').map(s => {
-                  const trimmed = s.trim();
-                  if (trimmed.startsWith('0x')) {
-                    return parseInt(trimmed, 16);
-                  }
-                  return parseInt(trimmed, 10);
-                });
-                paramsToValidate[key] = arrayValues;
-              } catch {
-                paramsToValidate[key] = value;
-              }
-            } else {
-              paramsToValidate[key] = value;
-            }
-          } else {
-            paramsToValidate[key] = value;
-          }
-        });
-
-        // Validate with Zod
-        const validationData = {
-          protocol: code.protocol,
-          params: paramsToValidate
-        };
-
-        console.log('Validating code:', code.name, 'protocol:', code.protocol);
-        console.log('Validation data:', validationData);
-
-        transmitActionSchema.parse(validationData);
-
-        console.log('Validation passed for:', code.name);
-      } catch (error) {
-        if (error instanceof ZodError) {
-          console.log('Validation failed for:', code.name, 'errors:', error.issues);
-          codeErrors.parameters = {};
-          error.issues.forEach((issue) => {
-            if (issue.path.length > 1 && issue.path[0] === 'params') {
-              const paramName = issue.path[1] as string;
-              codeErrors.parameters![paramName] = issue.message;
-            } else {
-              console.log('Unexpected error path:', issue.path, 'message:', issue.message);
-            }
-          });
-          hasErrors = true;
-        } else {
-          console.log('Non-Zod error during validation:', error);
+        if (!newErrors.codes) {
+          newErrors.codes = {};
         }
-      }
-
-      if (codeErrors.name || codeErrors.parameters) {
-        if (!newErrors.codes) newErrors.codes = {};
-        newErrors.codes[index] = codeErrors;
+        newErrors.codes[index] = validationResult.errors;
       }
     });
 

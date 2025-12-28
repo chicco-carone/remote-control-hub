@@ -17,7 +17,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { protocolParameters } from "@/lib/esphome-constants";
 import { ProtocolParameter } from "@/types/constants";
 import { ESPHomeCode } from "@/types/form";
-import { Info, Plus, Save, Trash2 } from "lucide-react";
+import { AlertCircle, Info, Plus, Save, Trash2 } from "lucide-react";
 
 interface ESPHomeCodesFormProps {
   codes: ESPHomeCode[];
@@ -63,6 +63,7 @@ export function ESPHomeCodesForm({
     param: ProtocolParameter,
   ) => {
     const value = codes[codeIndex]?.parameters[param.name] || "";
+    const hasError = !!errors.codes?.[codeIndex]?.parameters?.[param.name];
 
     if (param.type === "boolean") {
       return (
@@ -130,7 +131,7 @@ export function ESPHomeCodesForm({
                   param.type === "bytes" || param.type === "list"
                     ? "font-mono text-sm"
                     : ""
-                } ${errors.codes?.[codeIndex]?.parameters?.[param.name] ? "border-red-500" : ""}`}
+                } ${hasError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                 disabled
               />
             </TooltipTrigger>
@@ -150,16 +151,17 @@ export function ESPHomeCodesForm({
               param.type === "bytes" || param.type === "list"
                 ? "font-mono text-sm"
                 : ""
-            } ${errors.codes?.[codeIndex]?.parameters?.[param.name] ? "border-red-500" : ""}`}
+            } ${hasError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
           />
         )}
         {param.description && (
           <p className="text-xs text-muted-foreground">{param.description}</p>
         )}
-        {errors.codes?.[codeIndex]?.parameters?.[param.name] && (
-          <p className="text-sm text-red-500 mt-1">
-            {errors.codes[codeIndex].parameters![param.name]}
-          </p>
+        {hasError && (
+          <div className="flex items-start gap-2 text-sm text-red-500 mt-1 bg-red-50 dark:bg-red-950/30 p-2 rounded-md">
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>{errors.codes![codeIndex].parameters![param.name]}</span>
+          </div>
         )}
       </div>
     );
@@ -201,6 +203,16 @@ export function ESPHomeCodesForm({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Validation errors alert */}
+          {errors.codes && Object.keys(errors.codes).length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Attenzione:</strong> Ci sono errori di validazione nei codici.
+                Controlla i parametri evidenziati in rosso e correggili prima di procedere.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Alert>
             <Info className="h-4 w-4" />
@@ -250,11 +262,14 @@ export function ESPHomeCodesForm({
                               handleCodeChange(index, "name", e.target.value)
                             }
                             placeholder="e.g., Power On/Off, Volume Up, Channel Down"
-                            className={errors.codes?.[index]?.name ? "border-red-500" : ""}
+                            className={errors.codes?.[index]?.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                           />
                         )}
                         {errors.codes?.[index]?.name && (
-                          <p className="text-sm text-red-500 mt-1">{errors.codes[index].name}</p>
+                          <div className="flex items-start gap-2 text-sm text-red-500 mt-1 bg-red-50 dark:bg-red-950/30 p-2 rounded-md">
+                            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <span>{errors.codes[index].name}</span>
+                          </div>
                         )}
                       </div>
                       {codes.length > 1 ? (
