@@ -19,12 +19,15 @@ import { DeviceButton } from "@/types/types";
 import {
   ArrowRight,
   CheckCircle,
+  Edit2,
   Eye,
   EyeOff,
   Play,
   Plus,
   Radio,
   RotateCcw,
+  Save,
+  X,
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -56,6 +59,9 @@ export function ESPHomeCaptureInterface({
   const [newButtonName, setNewButtonName] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [showRecap, setShowRecap] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [editingCustomIndex, setEditingCustomIndex] = useState<number | null>(null);
+  const [editingCustomName, setEditingCustomName] = useState("");
 
   const defaultButtons = getDeviceButtons(deviceType);
   const allButtons = useMemo(
@@ -105,6 +111,13 @@ export function ESPHomeCaptureInterface({
           return updated;
         });
         setIsCapturing(false);
+
+        // Auto-advance to next button if enabled and not at the end
+        if (autoAdvance && currentButtonIndex < allButtons.length - 1) {
+          setTimeout(() => {
+            setCurrentButtonIndex((prevIndex) => prevIndex + 1);
+          }, 500); // Small delay for visual feedback
+        }
       }
     };
     connection.onLogReceived = (log: ESPHomeLogEntry) => {
@@ -115,7 +128,17 @@ export function ESPHomeCaptureInterface({
       connection.onCodeCaptured = undefined;
       connection.onLogReceived = undefined;
     };
-  }, [connection, isCapturing, currentButtonIndex, allButtons]);
+  }, [connection, isCapturing, currentButtonIndex, allButtons, autoAdvance]);
+
+  useEffect(() => {
+    // Auto-start capture when button changes and auto-advance is enabled
+    if (autoAdvance && !isCapturing && currentButtonIndex < allButtons.length) {
+      const timer = setTimeout(() => {
+        handleStartCapture();
+      }, 600); // Slight delay after button transition
+      return () => clearTimeout(timer);
+    }
+  }, [currentButtonIndex, autoAdvance, isCapturing, allButtons.length]);
 
   const handleStartCapture = async () => {
     setIsCapturing(true);
@@ -168,6 +191,34 @@ export function ESPHomeCaptureInterface({
         return prevIndex;
       });
     }
+  };
+
+  const handleEditCustomButton = (index: number) => {
+    setEditingCustomIndex(index);
+    setEditingCustomName(customButtons[index].name);
+  };
+
+  const handleSaveCustomButtonName = (index: number) => {
+    if (editingCustomName.trim()) {
+      setCustomButtons((prev) =>
+        prev.map((btn, i) =>
+          i === index
+            ? {
+                ...btn,
+                name: editingCustomName.trim(),
+                description: `Custom button: ${editingCustomName.trim()}`,
+              }
+            : btn
+        )
+      );
+      setEditingCustomIndex(null);
+      setEditingCustomName("");
+    }
+  };
+
+  const handleCancelEditCustomButton = () => {
+    setEditingCustomIndex(null);
+    setEditingCustomName("");
   };
 
   const handleShowRecap = () => {
@@ -307,6 +358,24 @@ export function ESPHomeCaptureInterface({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="auto-advance"
+                  checked={autoAdvance}
+                  onChange={(e) => setAutoAdvance(e.target.checked)}
+                  className="h-4 w-4 cursor-pointer"
+                />
+                <label htmlFor="auto-advance" className="cursor-pointer text-sm font-medium">
+                  Auto-advance to next button
+                </label>
+              </div>
+              <Badge variant={autoAdvance ? "default" : "outline"}>
+                {autoAdvance ? "On" : "Off"}
+              </Badge>
+            </div>
+
             <Alert>
               <Zap className="h-4 w-4" />
               <AlertDescription>
@@ -433,19 +502,79 @@ export function ESPHomeCaptureInterface({
           )}
 
           {customButtons.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {customButtons.map((button, index) => (
-                <div
-                  key={index}
-                  className="p-2 rounded-lg border bg-blue-50 dark:bg-blue-950/30 text-center"
-                >
-                  <ButtonIcon
-                    name={button.icon}
-                    className="h-4 w-4 mx-auto mb-1"
-                  />
-                  <p className="text-xs font-medium truncate">{button.name}</p>
-                </div>
-              ))}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm mb-3">Existing Custom Buttons:</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {customButtons.map((button, index) => {
+                  const defaultButtonsCount = getDeviceButtons(deviceType).length;
+                  const capturedIndex = defaultButtonsCount + index;
+                  const isCaptured = capturedCodes[capturedIndex]?.captured;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`p-3 rounded-lg border ${
+                        isCaptured
+                          ? "bg-green-50 dark:bg-green-950/30 border-green-500"
+                          : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+                      } text-center`}
+                    >
+                      {editingCustomIndex === index ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={editingCustomName}
+                            onChange={(e) => setEditingCustomName(e.target.value)}
+                            placeholder="Button name"
+                            className="w-full px-2 py-1 text-xs border rounded"
+                            autoFocus
+                          />
+                          <div className="flex gap-1 justify-center">
+                            <Button
+                              onClick={() => handleSaveCustomButtonName(index)}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 w-6 p-0"
+                              disabled={!editingCustomName.trim()}
+                            >
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={handleCancelEditCustomButton}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 w-6 p-0"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center gap-1">
+                            <ButtonIcon
+                              name={button.icon}
+                              className="h-4 w-4"
+                            />
+                            {isCaptured && (
+                              <CheckCircle className="h-3 w-3 text-green-600" />
+                            )}
+                          </div>
+                          <p className="text-xs font-medium truncate">{button.name}</p>
+                          <Button
+                            onClick={() => handleEditCustomButton(index)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 w-full text-xs p-0"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </CardContent>
