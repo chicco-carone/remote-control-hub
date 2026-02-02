@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
+import { Webhook } from "svix";
 import { deleteUserServer, upsertUserServer } from "@/lib/convex-server-client";
 
 function emailLocalPart(email?: string | null): string | undefined {
@@ -11,8 +12,42 @@ function emailLocalPart(email?: string | null): string | undefined {
 }
 
 export async function POST(request: Request) {
-  const payload: WebhookEvent = await request.json();
-  console.log("Webhook received:", payload);
+  // Verify webhook signature for security
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+
+  if (!WEBHOOK_SECRET) {
+    console.error("CLERK_WEBHOOK_SECRET not configured");
+    return new NextResponse("Webhook secret not configured", { status: 500 });
+  }
+
+  // Get Svix headers for signature verification
+  const svix_id = request.headers.get("svix-id");
+  const svix_timestamp = request.headers.get("svix-timestamp");
+  const svix_signature = request.headers.get("svix-signature");
+
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error("Missing Svix headers");
+    return new NextResponse("Missing Svix headers", { status: 400 });
+  }
+
+  // Get the raw body for signature verification
+  const body = await request.text();
+  const wh = new Webhook(WEBHOOK_SECRET);
+
+  let payload: WebhookEvent;
+
+  try {
+    payload = wh.verify(body, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    }) as WebhookEvent;
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err);
+    return new NextResponse("Invalid signature", { status: 401 });
+  }
+
+  console.log("Webhook received and verified:", payload);
 
   try {
     if (payload.type === "user.deleted") {
@@ -31,10 +66,14 @@ export async function POST(request: Request) {
       const emailAddresses = Array.isArray(payload.data.email_addresses)
         ? payload.data.email_addresses
         : [];
-      const primaryEmailObj = emailAddresses.find((e) => e?.id === primaryEmailId) ?? null;
+      const primaryEmailObj =
+        emailAddresses.find((e) => e?.id === primaryEmailId) ?? null;
       const email = primaryEmailObj?.email_address ?? undefined;
 
-      const emailVerificationTime = primaryEmailObj?.verification?.status === "verified" ? Date.now() : undefined;
+      const emailVerificationTime =
+        primaryEmailObj?.verification?.status === "verified"
+          ? Date.now()
+          : undefined;
 
       const firstName = payload.data.first_name ?? undefined;
       const lastName = payload.data.last_name ?? undefined;
@@ -43,10 +82,18 @@ export async function POST(request: Request) {
       // Name fallback priority: fullName -> email local-part -> "user"
       const name = fullName || emailLocalPart(email) || "user";
 
-      const username = payload.data.username ?? emailLocalPart(email) ?? undefined;
+      const username =
+        payload.data.username ?? emailLocalPart(email) ?? undefined;
       const image = payload.data.image_url ?? undefined;
 
-      console.log("Upserting user:", { clerkId, name, email, username, image, emailVerificationTime });
+      console.log("Upserting user:", {
+        clerkId,
+        name,
+        email,
+        username,
+        image,
+        emailVerificationTime,
+      });
 
       await upsertUserServer({
         clerkId,
