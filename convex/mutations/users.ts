@@ -6,6 +6,10 @@ import { mutation } from "../_generated/server";
  * Supports partial updates to handle out-of-order webhook events.
  * If a user with the same clerkId exists, update its data.
  * Otherwise, create a new user.
+ *
+ * SECURITY: The role field is NEVER accepted from external sources to prevent privilege escalation.
+ * Existing user roles are preserved on updates. New users always get "user" role.
+ * This mutation explicitly validates that no role is being set from the caller.
  */
 export const upsertUser = mutation({
   args: {
@@ -15,9 +19,16 @@ export const upsertUser = mutation({
     image: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
     clerkId: v.string(),
+    // SECURITY: role is NEVER accepted from external sources
   },
   returns: v.id("users"),
   handler: async (ctx, args) => {
+    // SECURITY: Explicitly check that role is not being passed
+    // This prevents privilege escalation attempts
+    if ("role" in args) {
+      throw new Error("SECURITY: role field cannot be set externally");
+    }
+
     // First check by clerkId
     const existingByClerk = await ctx.db
       .query("users")
@@ -26,6 +37,7 @@ export const upsertUser = mutation({
 
     if (existingByClerk) {
       // Perform partial update - only update provided fields
+      // SECURITY: Never update the role field - preserve existing role
       const updateData: any = {
         updatedAt: Date.now(),
       };
@@ -34,7 +46,8 @@ export const upsertUser = mutation({
       if (args.email !== undefined) updateData.email = args.email;
       if (args.username !== undefined) updateData.username = args.username;
       if (args.image !== undefined) updateData.image = args.image;
-      if (args.emailVerificationTime !== undefined) updateData.emailVerificationTime = args.emailVerificationTime;
+      if (args.emailVerificationTime !== undefined)
+        updateData.emailVerificationTime = args.emailVerificationTime;
 
       await ctx.db.patch(existingByClerk._id, updateData);
       return existingByClerk._id;
@@ -50,6 +63,7 @@ export const upsertUser = mutation({
     }
 
     // Create new user with defaults for undefined fields
+    // SECURITY: New users always get "user" role by default
     const newUserId = await ctx.db.insert("users", {
       name: args.name ?? "",
       email: args.email ?? "",
@@ -57,7 +71,7 @@ export const upsertUser = mutation({
       image: args.image ?? "",
       emailVerificationTime: args.emailVerificationTime ?? 0,
       clerkId: args.clerkId,
-      role: "user",
+      role: "user", // SECURITY: Default role - never from external source
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
